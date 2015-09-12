@@ -2,9 +2,9 @@
 #define CONSTDEF_H
 
 
-#define HEAD_GRAM "HEAD %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: %s\r\n\r\n"
+#define HEAD_GRAM "HEAD %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: %sConnection: close\r\n\r\n"
 
-#define GET_GRAM "GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: %s\r\nRange: bytes=%lld-\r\nConnection: close\r\n\r\n"
+#define GET_GRAM "GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: %s\r\nRange: bytes=%lld-\r\nConnection: keep-alive\r\n\r\n"
 
 
 /* Global Variable Defination */

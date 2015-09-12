@@ -61,8 +61,8 @@ int preconn(char*url){
 
 	////Headers send & recv
 
-	char*sendBuf=(char*)malloc(1024*sizeof(char));
-	char*recvBuf=(char*)malloc(1024*sizeof(char));
+	char*sendBuf=(char*)malloc(4096*sizeof(char));
+	char*recvBuf=(char*)malloc(4096*sizeof(char));
 	
 	struct hostent*host=gethostbyname(gURLinfo.szHostname);
 	if(host==NULL){
@@ -101,7 +101,9 @@ int preconn(char*url){
 		exit(-1);
 	}
 
-	if(recv(sockdesc,recvBuf,1024,0)==-1){
+	int dr=0;
+
+	if(dr=recv(sockdesc,recvBuf,4096,0)==-1){
 		fprintf(stderr,"Header Recving Failure!\n");
 		exit(-1);
 	}
