@@ -110,8 +110,8 @@ void*partget(void*arg){
 
 	ti->tid=pthread_self();
 	
-	char*sendBuf=(char*)malloc(sizeof(char)*4096);
-	char*recvBuf=(char*)malloc(sizeof(char)*4096);
+	char*sendBuf=(char*)malloc(sizeof(char)*40960);
+	char*recvBuf=(char*)malloc(sizeof(char)*40960);
 
 	int sockdesc=socket(AF_INET,SOCK_STREAM,0);
 	if(sockdesc==-1){
@@ -124,7 +124,7 @@ void*partget(void*arg){
 		exit(-1);
 	}
 
-	bzero(sendBuf,4096);
+	bzero(sendBuf,40960);
 
 	sprintf(sendBuf,GET_GRAM,gURLinfo.szURLname,gURLinfo.szHostname,"HttpDownloader",0);
 
@@ -133,7 +133,7 @@ void*partget(void*arg){
 		exit(-1);
 	}
 
-	if((dr=recv(sockdesc,recvBuf,4096,0))==-1){
+	if((dr=recv(sockdesc,recvBuf,40960,0))==-1){
 		fprintf(stderr,"Header Recving Failure!\n");
 		exit(-1);
 	}
@@ -172,9 +172,8 @@ void*partget(void*arg){
 	printf("%d - %d First Time DW: %d\n",ti->llBeginPos,ti->llEndPos,dw);
 
 	while(ti->llCurrentPos<ti->llEndPos){
-		dr=recv(sockdesc,recvBuf,4096,0);
+		dr=recv(sockdesc,recvBuf,40960,0);
 		
-		if(dr==0||dr==-1)printf("?????");
 		if(dr+ti->llCurrentPos>gURLinfo.llContentLen){
 			dw=pwrite(file,recvBuf,gURLinfo.llContentLen-headlength-ti->llCurrentPos,ti->llCurrentPos);
 			ti->llCurrentPos+=dw;
