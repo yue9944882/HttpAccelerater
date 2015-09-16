@@ -11,6 +11,8 @@
 #include<errno.h>
 #include<fcntl.h>
 #include<pthread.h>
+#include<time.h>
+
 
 #include<sys/types.h>
 #include<sys/socket.h>
@@ -38,7 +40,7 @@ int multidl(void){
 	for(i=0;i<iPart;i++){
 		tis[i].llBeginPos=i*(gURLinfo.llContentLen/iPart);
 		tis[i].llEndPos=(i+1)*(gURLinfo.llContentLen/iPart);
-		if(i==iPart-1)tis[0].llEndPos=gURLinfo.llContentLen;
+		if(i==iPart-1)tis[i].llEndPos=gURLinfo.llContentLen;
 		printf("Thread %d : %d - %d\n",i,tis[i].llBeginPos,tis[i].llEndPos);
 	}
 	
@@ -65,6 +67,11 @@ int multidl(void){
 	sock->sin_addr.s_addr=inet_addr(gURLinfo.szIPv4addr);
 	sock->sin_port=htons(gURLinfo.iPort);
 
+	time_t t1,t2;
+
+	time(&t1);
+
+
 	for(i=0;i<iPart;i++){
 		tis[i].sin=*sock;
 		//create
@@ -81,8 +88,12 @@ int multidl(void){
 		pthread_join(tis[i].tid,NULL);
 		if(tis[i].iFlag==1)iSuccess++;
 	}
+	
+	time(&t2);
 
-	if(iSuccess==iPart)printf("Download Success!\n");
+
+
+	if(iSuccess==iPart)printf("Download Success!Using Time:%d sec\n",(t2-t1));
 	else printf("Download Failure!\n");
 
 	free(sendBuf);
@@ -94,10 +105,11 @@ int multidl(void){
 
 
 int partition(){
-	if(gURLinfo.llContentLen>1024*1024)return 20;
-	else if(gURLinfo.llContentLen>512*1024)return 10;
-	else if(gURLinfo.llContentLen>128*1024)return 5;
-	else return 3;
+	
+	if(gURLinfo.llContentLen>1024*1024)return 16;
+	else if(gURLinfo.llContentLen>512*1024)return 8;
+	else if(gURLinfo.llContentLen>128*1024)return 2;
+	else return 1;
 }
 
 
@@ -110,8 +122,14 @@ void*partget(void*arg){
 
 	ti->tid=pthread_self();
 	
-	char*sendBuf=(char*)malloc(sizeof(char)*40960);
-	char*recvBuf=(char*)malloc(sizeof(char)*40960);
+
+	int llContentLen=gURLinfo.llContentLen;
+	int llBeginPos=ti->llBeginPos;
+	int llEndPos=ti->llEndPos;
+	int llCurrentPos=ti->llCurrentPos;
+
+	char*sendBuf=(char*)malloc(sizeof(char)*4096);
+	char*recvBuf=(char*)malloc(sizeof(char)*4096);
 
 	int sockdesc=socket(AF_INET,SOCK_STREAM,0);
 	if(sockdesc==-1){
@@ -124,7 +142,7 @@ void*partget(void*arg){
 		exit(-1);
 	}
 
-	bzero(sendBuf,40960);
+	bzero(sendBuf,4096);
 
 	sprintf(sendBuf,GET_GRAM,gURLinfo.szURLname,gURLinfo.szHostname,"HttpDownloader",0);
 
@@ -133,7 +151,7 @@ void*partget(void*arg){
 		exit(-1);
 	}
 
-	if((dr=recv(sockdesc,recvBuf,40960,0))==-1){
+	if((dr=recv(sockdesc,recvBuf,4096,0))==-1){
 		fprintf(stderr,"Header Recving Failure!\n");
 		exit(-1);
 	}
@@ -155,7 +173,7 @@ void*partget(void*arg){
 	char*tmpptr=skiphead;
 	long long reallen=0;
 	
-	ti->llCurrentPos=ti->llBeginPos;
+	llCurrentPos=llBeginPos;
 
 	int file=open(gURLinfo.szFilename,O_CREAT|O_RDWR,S_IRWXU);
 
@@ -163,24 +181,24 @@ void*partget(void*arg){
 		fprintf(stderr,"File Open Failure!\n");
 		exit(-1);
 	}
-	if(dr-headlength>ti->llEndPos)dw=pwrite(file,skiphead,ti->llEndPos-headlength,ti->llCurrentPos);
-	else dw=pwrite(file,skiphead,dr-headlength,ti->llCurrentPos);
+	if(dr-headlength>llEndPos)dw=pwrite(file,skiphead,llEndPos-headlength,llCurrentPos);
+	else dw=pwrite(file,skiphead,dr-headlength,llCurrentPos);
 
-	ti->llCurrentPos+=dw;
+	llCurrentPos+=dw;
 
 
-	printf("%d - %d First Time DW: %d\n",ti->llBeginPos,ti->llEndPos,dw);
+	printf("%d - %d First Time DW: %d\n",llBeginPos,llEndPos,dw);
 
-	while(ti->llCurrentPos<ti->llEndPos){
-		dr=recv(sockdesc,recvBuf,40960,0);
+	while(llCurrentPos<llEndPos){
+		dr=recv(sockdesc,recvBuf,4096,0);
 		
-		if(dr+ti->llCurrentPos>gURLinfo.llContentLen){
-			dw=pwrite(file,recvBuf,gURLinfo.llContentLen-headlength-ti->llCurrentPos,ti->llCurrentPos);
-			ti->llCurrentPos+=dw;
+		if(dr+llCurrentPos>gURLinfo.llContentLen){
+			dw=pwrite(file,recvBuf,gURLinfo.llContentLen-headlength-llCurrentPos,llCurrentPos);
+			llCurrentPos+=dw;
 			break;
 		}else{
-			dw=pwrite(file,recvBuf,dr,ti->llCurrentPos);
-			ti->llCurrentPos+=dw;
+			dw=pwrite(file,recvBuf,dr,llCurrentPos);
+			llCurrentPos+=dw;
 		}
 	}
 
