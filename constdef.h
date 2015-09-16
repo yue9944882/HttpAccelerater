@@ -31,9 +31,15 @@ struct Threadinfo{
 	long long llBeginPos;
 	long long llCurrentPos;
 	long long llEndPos;
-	long long llContentLen;
+	//long long llContentLen;
+	char*msg;
 	pthread_t tid;
 	int iFlag;
 };
+
+
+//long long*llThreadOffset;
+
+
 
 #endif

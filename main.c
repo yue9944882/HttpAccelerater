@@ -1,6 +1,9 @@
 #include"stdio.h"
 #include"preconn.h"
 #include"singledl.h"
+#include"multidl.h"
+
+
 
 
 
@@ -12,7 +15,9 @@ int main(int argc,char**argv){
 
 	////Analysing the parameters	
 	preconn(argv[1]);
-	singledl();
+	//singledl();
+	multidl();
+	
 	return 0;
 }
 

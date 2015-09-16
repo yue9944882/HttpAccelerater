@@ -78,7 +78,6 @@ int singledl(void){
 	}
 	
 
-	printf("%d %d\n",dr,errno);
 
 
 	////Strip the HTTP header
